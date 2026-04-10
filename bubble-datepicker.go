@@ -96,6 +96,9 @@ type Model struct {
 
 	// Selected indicates whether a date is Selected in the datepicker
 	Selected bool
+
+	//Dates to be highlighted in the calendar
+	Highlighted  Highlight
 }
 
 // New returns the Model of the datepicker
@@ -104,6 +107,23 @@ func New(time time.Time) Model {
 		Time:   time,
 		KeyMap: DefaultKeyMap(),
 		Styles: DefaultStyles(),
+
+		Focused:  FocusCalendar,
+		Selected: false,
+	}
+}
+
+// New returns the Model of the datepicker
+func NewWithHighlight(time time.Time, highlighted Highlight) Model {
+	if highlighted.Dates == nil {
+		highlighted = Highlight{Dates: make(map[string]lipgloss.Style)}	
+	}
+
+	return Model{
+		Time:   time,
+		KeyMap: DefaultKeyMap(),
+		Styles: DefaultStyles(),
+		Highlighted: highlighted,
 
 		Focused:  FocusCalendar,
 		Selected: false,
@@ -269,6 +289,13 @@ func (m Model) View() string {
 
 		style := m.Styles.Date
 		textStyle := m.Styles.Text
+
+		//Apply highlight style. If the day is focused or selected, the highlight will be overridden 
+		// by the focused or selected style.
+		if  style, ok := m.Highlighted.IsHighlighted(day); ok {
+			textStyle = style
+		}
+
 		if !m.Selected {
 			// skip modifications to the date
 		} else if day.Day() == m.Time.Day() && day.Month() == m.Time.Month() && m.Focused == FocusCalendar {
